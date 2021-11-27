@@ -1,0 +1,52 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "next",
+    "prettier",
+    "plugin:tailwind/recommended"
+  ],
+  "plugins": [
+    "typescript",
+    "prettier"
+  ],
+  "globals": {
+    "JSX": true
+  },
+  "rules": {
+    "max-len": [
+      2,
+      80,
+      2,
+      {
+        "ignoreUrls": true,
+        "ignoreComments": true,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true
+      }
+    ],
+    "prettier/prettier": "error",
+    "react/jsx-first-prop-new-line": [
+      "error",
+      "multiline"
+    ],
+    "react/jsx-indent-props": [
+      "error",
+      2
+    ],
+    "react/jsx-closing-bracket-location": [
+      "error",
+      "tag-aligned"
+    ],
+    "react/jsx-max-props-per-line": [
+      "error",
+      {
+        "maximum": 1,
+        "when": "multiline"
+      }
+    ],
+    "@next/next/no-html-link-for-pages": "off"
+  }
+}
