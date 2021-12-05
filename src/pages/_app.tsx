@@ -1,6 +1,6 @@
-import type { AppProps } from 'next/app';
-import { MetaMaskProvider } from '@/vendors/metamask-react';
 import '@/styles/index.css';
+import { MetaMaskProvider } from 'metamask-react';
+import type { AppProps } from 'next/app';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (

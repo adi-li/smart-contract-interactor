@@ -8,9 +8,6 @@
       ],
       "@/*": [
         "src/*"
-      ],
-      "@/vendors/*": [
-        "vendors/*"
       ]
     },
     "target": "es5",

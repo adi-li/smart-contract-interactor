@@ -1,6 +1,6 @@
+import { useMetaMask } from 'metamask-react';
 import { useMemo } from 'react';
 import Web3 from 'web3';
-import { useMetaMask } from '@/vendors/metamask-react';
 
 let cachedWeb3: Web3 | null = null;
 
