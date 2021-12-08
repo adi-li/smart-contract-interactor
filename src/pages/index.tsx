@@ -1,13 +1,13 @@
+import ContractInteractor from '@/components/ContractInteractor';
+import Input from '@/components/Input';
+import Layout from '@/components/Layout';
+import Textarea from '@/components/Textarea';
+import useWeb3 from '@/hooks/useWeb3';
+import noop from '@/utils/noop';
 import Link from 'next/link';
 import { FormEventHandler, useCallback, useEffect, useState } from 'react';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem } from 'web3-utils';
-import Layout from '@/components/Layout';
-import useWeb3 from '@/hooks/useWeb3';
-import Input from '@/components/Input';
-import Textarea from '@/components/Textarea';
-import ContractInteractor from '@/components/ContractInteractor';
-import noop from '@/utils/noop';
 
 interface Chain {
   network: string;
@@ -79,7 +79,7 @@ export default function Home() {
   return (
     <Layout>
       {!ethereum ? (
-        <div className="flex items-center justify-center flex-grow">
+        <div className="flex flex-grow justify-center items-center">
           <p>
             Please download and use&nbsp;
             <Link href="https://metamask.io/">
@@ -97,7 +97,7 @@ export default function Home() {
       ) : (
         <>
           <form
-            className="w-full max-w-3xl px-4 pb-8 mx-auto"
+            className="px-4 pb-8 mx-auto w-full max-w-3xl"
             onSubmit={onChangeAbi}
           >
             <div className="grid grid-cols-2 gap-6">
@@ -123,8 +123,8 @@ export default function Home() {
                 helpText="Paste ABI JSON array above"
                 wrapperClassName="col-span-full"
               />
-              <div className="text-right col-span-full">
-                <button className="px-3 py-2 border rounded-md hover:bg-gray-200">
+              <div className="col-span-full text-right">
+                <button className="py-2 px-3 hover:bg-gray-200 rounded-md border">
                   Submit
                 </button>
               </div>
@@ -132,8 +132,8 @@ export default function Home() {
           </form>
 
           {contract && (
-            <div className="w-full py-8 border-t">
-              <div className="w-full max-w-3xl px-4 mx-auto">
+            <div className="py-8 w-full border-t">
+              <div className="px-4 mx-auto w-full max-w-3xl">
                 <ContractInteractor
                   contract={contract}
                   address={address}

@@ -63,15 +63,15 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
     <Disclosure>
       {({ open }) => (
         <>
-          <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+          <Disclosure.Button className="flex justify-between py-2 px-4 w-full text-sm font-medium text-left bg-gray-100 hover:bg-gray-200 rounded-md focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75 focus:outline-none">
             <span>{abiItem.name}</span>
             <ChevronRightIcon
               className={clsx(open && 'transform rotate-90', 'w-5 h-5')}
             />
           </Disclosure.Button>
-          <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-500 border rounded-md">
+          <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-500 rounded-md border">
             <form onSubmit={onSubmit}>
-              <div className="flex flex-col items-start p-2 gap-4">
+              <div className="flex flex-col gap-4 items-start p-2">
                 {abiItem.inputs?.map((input) => (
                   <label key={input.name} className="block w-full">
                     <span className="text-gray-700">
@@ -80,7 +80,7 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
                     <input
                       required
                       type={input.type === 'uint256' ? 'number' : 'text'}
-                      className="block w-full px-4 py-2 rounded-md"
+                      className="block py-2 px-4 w-full rounded-md"
                       data-data-type={input.type}
                     />
                   </label>
@@ -94,7 +94,7 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
                       required
                       data-txn-value
                       type="number"
-                      className="block w-full px-4 py-2 rounded-md"
+                      className="block py-2 px-4 w-full rounded-md"
                     />
                   </label>
                 )}
@@ -102,25 +102,25 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
                   <Loading />
                 ) : isReadFunc || account ? (
                   <input
-                    className="px-4 py-2 bg-gray-200 cursor-pointer rounded-md hover:bg-gray-300"
+                    className="py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-md cursor-pointer"
                     type="submit"
                     value="Send Request"
                   />
                 ) : (
                   <button
-                    className="px-4 py-2 bg-gray-200 cursor-pointer rounded-md hover:bg-gray-300"
+                    className="py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-md cursor-pointer"
                     onClick={() => connect().catch(console.error)}
                   >
                     Connect MetaMask
                   </button>
                 )}
                 {error && (
-                  <pre className="w-full p-2 overflow-auto text-red-500 border rounded-md max-h-60">
+                  <pre className="overflow-auto p-2 w-full max-h-60 text-red-500 rounded-md border">
                     {error}
                   </pre>
                 )}
                 {result && (
-                  <pre className="w-full p-2 overflow-auto border rounded-md max-h-60">
+                  <pre className="overflow-auto p-2 w-full max-h-60 rounded-md border">
                     {result}
                   </pre>
                 )}

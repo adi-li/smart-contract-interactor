@@ -2,14 +2,12 @@
   "parser": "@typescript-eslint/parser",
   "extends": [
     "eslint:recommended",
-    "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
     "next",
     "prettier",
-    "plugin:tailwind/recommended"
+    "plugin:tailwindcss/recommended"
   ],
   "plugins": [
-    "typescript",
     "prettier"
   ],
   "globals": {

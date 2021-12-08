@@ -1,6 +1,6 @@
 export default function Loading({ text }: { text?: string }) {
   return (
-    <div className="inline-flex items-center justify-center p-2 gap-2">
+    <div className="inline-flex gap-2 justify-center items-center p-2">
       <span className="inline-block w-5 h-5">
         <svg
           className="w-full h-full animate-spin"

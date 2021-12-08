@@ -5,13 +5,13 @@ import Header from './Header';
 
 export default function Layout({ children }: { children?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
+    <div className="flex flex-col justify-center items-center min-h-screen">
       <Head>
         <title>Smart Contract Interactor</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Header />
-      <main className="flex flex-col items-center justify-center flex-1 w-full">
+      <main className="flex flex-col flex-1 justify-center items-center w-full">
         {children}
       </main>
       <Footer />

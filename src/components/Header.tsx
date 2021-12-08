@@ -1,6 +1,6 @@
 export default function Header() {
   return (
-    <div className="w-full max-w-3xl px-4 py-8">
+    <div className="py-8 px-4 w-full max-w-3xl">
       <h1 className="text-4xl font-bold">Smart Contract Interactor</h1>
       <p className="mt-2 text-lg text-gray-600">
         A simple smart contract interactor using metamask, inspired by

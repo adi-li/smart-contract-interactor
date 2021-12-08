@@ -9,9 +9,9 @@ export interface BaseInputProps {
 
 export function getInputClass(...className: ClassValue[]) {
   return clsx(
-    'block w-full mt-1 border-gray-300 rounded-md shadow-sm',
+    'block mt-1 w-full rounded-md border-gray-300 shadow-sm',
     'focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50',
-    'disabled:bg-gray-200 disabled:text-gray-400',
+    'disabled:text-gray-400 disabled:bg-gray-200',
     ...className,
   );
 }

@@ -18,22 +18,22 @@ export default function ContractInteractor({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-4">
-        <div className="items-center grid grid-cols-1 gap-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 items-center">
           <h2 className="font-bold">Contract address:</h2>
-          <span className="block px-3 py-2 font-mono border rounded-md col-span-2">
+          <span className="block col-span-2 py-2 px-3 font-mono rounded-md border">
             {address}
           </span>
         </div>
-        <div className="items-center grid grid-cols-1 gap-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 items-center">
           <h2 className="font-bold">Wallet address:</h2>
           <div className="col-span-2">
             {account ? (
-              <span className="block w-full px-3 py-2 font-mono border rounded-md">
+              <span className="block py-2 px-3 w-full font-mono rounded-md border">
                 {account}
               </span>
             ) : (
               <button
-                className="w-full px-3 py-2 border rounded-md hover:bg-gray-200"
+                className="py-2 px-3 w-full hover:bg-gray-200 rounded-md border"
                 onClick={() => connect().catch(console.error)}
               >
                 Connect MetaMask
