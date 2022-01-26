@@ -1,12 +1,12 @@
+import useWeb3 from '@/hooks/useWeb3';
+import parseInputValue from '@/utils/parseInputValue';
 import { Disclosure } from '@headlessui/react';
 import clsx from 'clsx';
 import { FormEventHandler, useCallback, useState } from 'react';
 import { Contract } from 'web3-eth-contract';
 import { AbiItem, toWei } from 'web3-utils';
-import useWeb3 from '@/hooks/useWeb3';
-import parseInputValue from '@/utils/parseInputValue';
-import Loading from './Loading';
 import ChevronRightIcon from './ChevronRightIcon';
+import Loading from './Loading';
 
 export interface AbiItemRowProps {
   contract: Contract;
@@ -63,10 +63,10 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
     <Disclosure>
       {({ open }) => (
         <>
-          <Disclosure.Button className="flex justify-between py-2 px-4 w-full text-sm font-medium text-left bg-gray-100 hover:bg-gray-200 rounded-md focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75 focus:outline-none">
+          <Disclosure.Button className="flex justify-between py-2 px-4 w-full text-sm font-medium text-left bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus-visible:ring focus-visible:ring-gray-500/75">
             <span>{abiItem.name}</span>
             <ChevronRightIcon
-              className={clsx(open && 'transform rotate-90', 'w-5 h-5')}
+              className={clsx(open && 'rotate-90', 'w-5 h-5')}
             />
           </Disclosure.Button>
           <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-500 rounded-md border">
@@ -94,6 +94,7 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
                       required
                       data-txn-value
                       type="number"
+                      step={1e-9}
                       className="block py-2 px-4 w-full rounded-md"
                     />
                   </label>

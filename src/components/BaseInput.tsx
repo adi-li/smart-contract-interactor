@@ -1,5 +1,5 @@
-import type { PropsWithChildren, ReactNode } from 'react';
 import clsx, { ClassValue } from 'clsx';
+import type { PropsWithChildren, ReactNode } from 'react';
 
 export interface BaseInputProps {
   title: string;
@@ -10,7 +10,7 @@ export interface BaseInputProps {
 export function getInputClass(...className: ClassValue[]) {
   return clsx(
     'block mt-1 w-full rounded-md border-gray-300 shadow-sm',
-    'focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50',
+    'focus:border-indigo-300 focus:ring focus:ring-indigo-200/50',
     'disabled:text-gray-400 disabled:bg-gray-200',
     ...className,
   );

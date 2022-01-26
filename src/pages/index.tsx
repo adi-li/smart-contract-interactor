@@ -1,85 +1,95 @@
 import ContractInteractor from '@/components/ContractInteractor';
-import Input from '@/components/Input';
 import Layout from '@/components/Layout';
-import Textarea from '@/components/Textarea';
+import NewContractForm from '@/components/NewContractForm';
+import SavedContracts from '@/components/SavedContracts';
+import useSavedContracts, { SavedContract } from '@/hooks/useSavedContracts';
 import useWeb3 from '@/hooks/useWeb3';
-import noop from '@/utils/noop';
+import Head from 'next/head';
 import Link from 'next/link';
-import { FormEventHandler, useCallback, useEffect, useState } from 'react';
-import { Contract } from 'web3-eth-contract';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { AbiItem } from 'web3-utils';
-
-interface Chain {
-  network: string;
-  chainId: number;
-}
-
-const getChainName = (chains: Chain[], chainIdStr: string | null) => {
-  const chainNum = parseInt(chainIdStr || '0', 16);
-  return (
-    (chains.length > 0 &&
-      chainNum > 0 &&
-      chains.find((chain) => chain.chainId === chainNum)?.network) ||
-    chainIdStr ||
-    'N/A'
-  );
-};
 
 export default function Home() {
   const { ethereum, chainId, web3 } = useWeb3();
-  const [chains, setChains] = useState<Chain[]>([]);
-  const [abi, setAbi] = useState<AbiItem[]>([]);
   const [address, setAddress] = useState<string>('');
-  const [contract, setContract] = useState<Contract | undefined>();
+  const [abi, setAbi] = useState<AbiItem[]>([]);
+  const [savedContracts, updateContract, removeContract] =
+    useSavedContracts(chainId);
+  const interactorRef = useRef<HTMLDivElement | null>(null);
 
-  const onChangeAbi: FormEventHandler<HTMLFormElement> = useCallback(
-    (e) => {
-      e.preventDefault();
+  const contract = useMemo(() => {
+    if (!web3 || !address || !abi) return null;
+    return new web3.eth.Contract(abi, address);
+  }, [address, abi, web3]);
+
+  const savedContract = useMemo(() => {
+    if (!savedContracts || savedContracts.length === 0) return null;
+    return savedContracts.find((c) => c.address === address);
+  }, [address, savedContracts]);
+
+  const onCreate = useCallback(
+    (addressInput: string, abiInput: AbiItem[]) => {
       if (!web3) return;
-      const address = (
-        e.currentTarget.querySelector(
-          'input[name="address"]',
-        ) as HTMLInputElement | null
-      )?.value;
-      const jsonStr = e.currentTarget.querySelector('textarea')?.value;
-      if (!address) {
-        window.alert('Invalid address');
-        return;
-      }
-      if (!jsonStr) {
-        window.alert('Invalid ABI json');
-        return;
-      }
-      let json: AbiItem[];
       try {
-        json = JSON.parse(jsonStr);
-      } catch (error) {
-        window.alert('Invalid ABI json');
-        return;
-      }
-      try {
-        const contract = new web3.eth.Contract(json, address);
-        setAbi(json);
+        updateContract({
+          address: addressInput,
+          abi: abiInput,
+        });
+        setAbi(abiInput);
         setAddress(address);
-        setContract(contract);
       } catch (error) {
         window.alert('Cannot parse ABI value');
       }
+      setTimeout(() => {
+        interactorRef.current?.scrollIntoView();
+      }, 0);
+    },
+    [address, updateContract, web3],
+  );
+
+  const onSelectContract = useCallback(
+    (contract: SavedContract) => {
+      if (!web3) return null;
+      setAbi(contract.abi);
+      setAddress(contract.address);
+      setTimeout(() => {
+        interactorRef.current?.scrollIntoView();
+      }, 0);
     },
     [web3],
   );
 
-  useEffect(() => {
-    fetch('https://chainid.network/chains.json')
-      .then((res) => res.json())
-      .then(setChains)
-      .catch(noop);
-  }, []);
+  const onUpdateContract = useCallback(
+    (contract: SavedContract) => {
+      const name = window.prompt('Please enter a nickname');
+      if (!name) return;
+      updateContract({
+        ...contract,
+        name,
+      });
+    },
+    [updateContract],
+  );
+
+  const onRemoveContract = useCallback(
+    (contract: SavedContract) => {
+      const confirm = window.confirm(`Remove ${contract.name}?`);
+      if (confirm) removeContract(contract.address);
+    },
+    [removeContract],
+  );
 
   return (
     <Layout>
+      <Head>
+        <title>
+          {savedContract
+            ? `${savedContract.name} | eth-contract-gui`
+            : 'eth-contract-gui'}
+        </title>
+      </Head>
       {!ethereum ? (
-        <div className="flex flex-grow justify-center items-center">
+        <div className="flex grow justify-center items-center">
           <p>
             Please download and use&nbsp;
             <Link href="https://metamask.io/">
@@ -96,46 +106,25 @@ export default function Home() {
         </div>
       ) : (
         <>
-          <form
-            className="px-4 pb-8 mx-auto w-full max-w-3xl"
-            onSubmit={onChangeAbi}
-          >
-            <div className="grid grid-cols-2 gap-6">
-              <Input
-                title="Current Chain Id"
-                helpText="Change it via MetaMask plugin"
-                type="text"
-                disabled
-                value={getChainName(chains, chainId)}
-              />
-              <Input
-                required
-                title="Contract Address"
-                helpText="Starts with 0x"
-                type="text"
-                name="address"
-                pattern="^0x[a-fA-F0-9]{40}$"
-              />
-              <Textarea
-                required
-                title="ABI JSON"
-                name="abi"
-                helpText="Paste ABI JSON array above"
-                wrapperClassName="col-span-full"
-              />
-              <div className="col-span-full text-right">
-                <button className="py-2 px-3 hover:bg-gray-200 rounded-md border">
-                  Submit
-                </button>
-              </div>
-            </div>
-          </form>
+          <div className="flex flex-col gap-8 px-4 pb-8 mx-auto w-full max-w-3xl">
+            <SavedContracts
+              contracts={savedContracts}
+              onSelect={onSelectContract}
+              onUpdate={onUpdateContract}
+              onRemove={onRemoveContract}
+            />
+            <NewContractForm
+              onSubmit={onCreate}
+              defaultContract={savedContract}
+            />
+          </div>
 
-          {contract && (
-            <div className="py-8 w-full border-t">
+          {contract && savedContract && (
+            <div ref={interactorRef} className="py-8 w-full border-t">
               <div className="px-4 mx-auto w-full max-w-3xl">
                 <ContractInteractor
                   contract={contract}
+                  savedContract={savedContract}
                   address={address}
                   abi={abi}
                 />
