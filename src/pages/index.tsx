@@ -36,7 +36,7 @@ export default function Home() {
           abi: abiInput,
         });
         setAbi(abiInput);
-        setAddress(address);
+        setAddress(addressInput);
       } catch (error) {
         window.alert('Cannot parse ABI value');
       }
@@ -44,7 +44,7 @@ export default function Home() {
         interactorRef.current?.scrollIntoView();
       }, 0);
     },
-    [address, updateContract, web3],
+    [updateContract, web3],
   );
 
   const onSelectContract = useCallback(
