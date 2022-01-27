@@ -40,12 +40,20 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
       const inputs = e.currentTarget.querySelectorAll(
         'input:not([type="submit"]):not([data-txn-value])',
       ) as NodeListOf<HTMLInputElement>;
-      const data = Array.from(inputs.values()).map(parseInputValue);
       const value = (
         e.currentTarget.querySelector(
           'input[data-txn-value]',
         ) as HTMLInputElement | null
       )?.value;
+
+      let data = [];
+      try {
+        data = Array.from(inputs.values()).map(parseInputValue);
+      } catch (err) {
+        setError((err as Error).message);
+        setIsQuerying(false);
+        return;
+      }
 
       const method = contract.methods[abiItem.name](...data);
       const promise = isReadFunc

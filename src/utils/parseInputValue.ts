@@ -1,10 +1,17 @@
+import { toBN } from 'web3-utils';
+
 export default function parseInputValue(input: HTMLInputElement) {
   const { dataType } = input.dataset as { dataType: string };
+  if (dataType.startsWith('uint') || dataType.startsWith('int')) {
+    const length = parseInt(dataType.replace(/^u?int/, ''), 10);
+    if (dataType.endsWith('[]')) {
+      return input.value
+        .split(',')
+        .map((value) => (length <= 32 ? parseInt(value, 10) : toBN(value)));
+    }
+    return length <= 32 ? parseInt(input.value, 10) : toBN(input.value);
+  }
   switch (dataType) {
-    case 'uint256':
-      return parseInt(input.value, 10);
-    case 'uint256[]':
-      return input.value.split(',').map((value) => parseInt(value, 10));
     default:
       return input.value;
   }
