@@ -129,9 +129,27 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
                   </pre>
                 )}
                 {result && (
-                  <pre className="overflow-auto p-2 w-full max-h-60 rounded-md border">
-                    {result}
-                  </pre>
+                  <>
+                    {(abiItem.outputs?.length || 0) > 0 && (
+                      <ol className="pl-4 list-decimal">
+                        {abiItem.outputs?.map((output, idx) => (
+                          <li key={idx}>
+                            {output.name}({output.internalType || output.type})
+                            {(output.components?.length || 0) > 0 &&
+                              output.components?.map((component, cidx) => (
+                                <span key={cidx} className="block">
+                                  &gt; {component.name}(
+                                  {component.internalType || component.type})
+                                </span>
+                              ))}
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                    <pre className="overflow-auto p-2 w-full max-h-60 rounded-md border">
+                      {result}
+                    </pre>
+                  </>
                 )}
               </div>
             </form>

@@ -23,7 +23,7 @@ export default function Home() {
   }, [address, abi, web3]);
 
   const savedContract = useMemo(() => {
-    if (!savedContracts || savedContracts.length === 0) return null;
+    if (!savedContracts || savedContracts.length === 0) return undefined;
     return savedContracts.find((c) => c.address === address);
   }, [address, savedContracts]);
 
@@ -109,6 +109,7 @@ export default function Home() {
           <div className="flex flex-col gap-8 px-4 pb-8 mx-auto w-full max-w-3xl">
             <SavedContracts
               contracts={savedContracts}
+              highlightContract={savedContract}
               onSelect={onSelectContract}
               onUpdate={onUpdateContract}
               onRemove={onRemoveContract}
