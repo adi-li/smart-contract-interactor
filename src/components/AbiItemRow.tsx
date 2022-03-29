@@ -87,9 +87,16 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
                     </span>
                     <input
                       required
-                      type={input.type === 'uint256' ? 'number' : 'text'}
+                      type="text"
                       className="block py-2 px-4 w-full rounded-md"
                       data-data-type={input.type}
+                      pattern={
+                        input.type.startsWith('uint')
+                          ? '[0-9]+'
+                          : input.type.startsWith('int')
+                          ? '-?[0-9]+'
+                          : undefined
+                      }
                     />
                   </label>
                 ))}

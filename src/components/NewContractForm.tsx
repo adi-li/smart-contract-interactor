@@ -1,8 +1,8 @@
 import useChainName from '@/hooks/useChainName';
-import { SavedContract } from '@/hooks/useSavedContracts';
+import type { SavedContract } from '@/hooks/useSavedContracts';
 import useWeb3 from '@/hooks/useWeb3';
 import { FormEventHandler, useCallback, useEffect, useState } from 'react';
-import { AbiItem } from 'web3-utils';
+import type { AbiItem } from 'web3-utils';
 import Input from './Input';
 import Textarea from './Textarea';
 

@@ -1,4 +1,4 @@
-import ContractInteractor from '@/components/ContractInteractor';
+import ContractTools from '@/components/ContractTools';
 import Layout from '@/components/Layout';
 import NewContractForm from '@/components/NewContractForm';
 import SavedContracts from '@/components/SavedContracts';
@@ -123,7 +123,7 @@ export default function Home() {
           {contract && savedContract && (
             <div ref={interactorRef} className="py-8 w-full border-t">
               <div className="px-4 mx-auto w-full max-w-3xl">
-                <ContractInteractor
+                <ContractTools
                   contract={contract}
                   savedContract={savedContract}
                   address={address}
