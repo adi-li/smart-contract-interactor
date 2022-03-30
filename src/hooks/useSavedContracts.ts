@@ -1,3 +1,4 @@
+import AbiDecoder from '@/utils/abi-decoder';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AbiItem } from 'web3-utils';
 
@@ -8,13 +9,13 @@ export interface SavedContract {
   lastUpdatedAt: number;
   address: string;
   abi: AbiItem[];
+  abiDecoder: AbiDecoder;
 }
 
-export interface NewContract {
-  name?: string;
-  address: string;
-  abi: AbiItem[];
-}
+export type RawSavedContract = Omit<SavedContract, 'abiDecoder'>;
+
+export type NewContract = Pick<SavedContract, 'address' | 'abi'> &
+  Partial<Pick<SavedContract, 'name'>>;
 
 export default function useSavedContracts(
   chainId: string | null,
@@ -24,7 +25,7 @@ export default function useSavedContracts(
   (address: string) => void,
 ] {
   const [savedContracts, setSavedContracts] = useState<
-    Record<string, Record<string, SavedContract>>
+    Record<string, Record<string, RawSavedContract>>
   >(() => {
     const value =
       typeof window === 'undefined' ? null : window.localStorage.getItem(KEY);
@@ -35,7 +36,7 @@ export default function useSavedContracts(
     (newContract: NewContract) => {
       if (!chainId) return;
       setSavedContracts(
-        (prevState: Record<string, Record<string, SavedContract>>) => {
+        (prevState: Record<string, Record<string, RawSavedContract>>) => {
           const oldContract = prevState?.[chainId]?.[newContract.address] || {};
           return {
             ...prevState,
@@ -58,7 +59,7 @@ export default function useSavedContracts(
     (address: string) => {
       if (!chainId) return;
       setSavedContracts(
-        (prevState: Record<string, Record<string, SavedContract>>) => {
+        (prevState: Record<string, Record<string, RawSavedContract>>) => {
           const newContracts = { ...prevState[chainId] };
           delete newContracts[address];
           const newState = {
@@ -80,10 +81,15 @@ export default function useSavedContracts(
     if (!chainId) return [];
     const contracts = savedContracts[chainId];
     if (!contracts) return [];
-    return Object.values(contracts).sort(
-      (aContract, bContract) =>
-        bContract.lastUpdatedAt - aContract.lastUpdatedAt,
-    );
+    return Object.values(contracts)
+      .sort(
+        (aContract, bContract) =>
+          bContract.lastUpdatedAt - aContract.lastUpdatedAt,
+      )
+      .map((contract) => ({
+        ...contract,
+        abiDecoder: new AbiDecoder(contract.abi),
+      }));
   }, [savedContracts, chainId]);
 
   return [data, update, remove];

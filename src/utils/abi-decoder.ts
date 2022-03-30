@@ -13,7 +13,6 @@ const typeToString = (input: AbiInput): string => {
 };
 
 export default class AbiDecoder {
-  abi: AbiItem[];
   methodIDs: { [id: string]: AbiItem };
 
   constructor(abiArray: AbiItem[]) {
@@ -34,7 +33,6 @@ export default class AbiDecoder {
       return res;
     }, {} as { [id: string]: AbiItem });
 
-    this.abi = Object.values(methodIDs);
     this.methodIDs = methodIDs;
   }
 
@@ -103,7 +101,7 @@ export default class AbiDecoder {
       .map((logItem) => {
         const methodID = logItem.topics[0].slice(2);
         const method = this.methodIDs[methodID];
-        if (!method || !method.inputs) return undefined;
+        if (!method || !method.inputs) return { address: logItem.address };
         const dataTypes: any[] = method.inputs
           .map(function (input) {
             if (!input.indexed) {
@@ -147,7 +145,8 @@ export default class AbiDecoder {
           }
 
           if (param.type.startsWith('uint') || param.type.startsWith('int')) {
-            decodedP.value = toBN(decodedP.value).toString(10);
+            decodedP.value =
+              decodedP.value && toBN(decodedP.value).toString(10);
           }
 
           return decodedP;

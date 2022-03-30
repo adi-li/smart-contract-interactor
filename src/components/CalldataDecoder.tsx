@@ -1,22 +1,23 @@
-import useAbiDecoder from '@/hooks/useAbiDecoder';
-import { FormEventHandler, useEffect, useState } from 'react';
+import type { SavedContract } from '@/hooks/useSavedContracts';
+import { FormEventHandler, useState } from 'react';
 import Textarea from './Textarea';
 
-export default function CalldataDecoder() {
-  const abiDecoder = useAbiDecoder();
+export default function CalldataDecoder({
+  savedContract,
+}: {
+  savedContract: SavedContract;
+}) {
   const [calldata, setCalldata] = useState('');
   const [result, setResult] = useState('');
 
-  console.log({ result });
-
   const onSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
-    if (!abiDecoder) return;
-    let decoded: ReturnType<typeof abiDecoder.decodeMethod>;
+    if (!savedContract.abiDecoder) return;
+    let decoded: ReturnType<typeof savedContract.abiDecoder.decodeMethod>;
     try {
-      decoded = abiDecoder.decodeMethod(calldata);
+      decoded = savedContract.abiDecoder.decodeMethod(calldata);
     } catch (err) {
-      setResult(JSON.stringify(err, null, 2));
+      setResult(err as string);
       return;
     }
     if (decoded) {
@@ -25,10 +26,6 @@ export default function CalldataDecoder() {
       setResult('Cannot decode calldata');
     }
   };
-
-  useEffect(() => {
-    setCalldata('');
-  }, [abiDecoder]);
 
   return (
     <>

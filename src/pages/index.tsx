@@ -7,7 +7,7 @@ import useWeb3 from '@/hooks/useWeb3';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { AbiItem } from 'web3-utils';
+import { AbiItem, toChecksumAddress } from 'web3-utils';
 
 export default function Home() {
   const { ethereum, chainId, web3 } = useWeb3();
@@ -30,13 +30,18 @@ export default function Home() {
   const onCreate = useCallback(
     (addressInput: string, abiInput: AbiItem[]) => {
       if (!web3) return;
+      const checksum = toChecksumAddress(addressInput);
+      if (!checksum) {
+        window.alert('Invalid contract address');
+        return;
+      }
       try {
         updateContract({
-          address: addressInput,
+          address: checksum,
           abi: abiInput,
         });
         setAbi(abiInput);
-        setAddress(addressInput);
+        setAddress(checksum);
       } catch (error) {
         window.alert('Cannot parse ABI value');
       }
@@ -124,10 +129,11 @@ export default function Home() {
             <div ref={interactorRef} className="py-8 w-full border-t">
               <div className="px-4 mx-auto w-full max-w-3xl">
                 <ContractTools
+                  abi={abi}
+                  address={address}
                   contract={contract}
                   savedContract={savedContract}
-                  address={address}
-                  abi={abi}
+                  savedContracts={savedContracts}
                 />
               </div>
             </div>

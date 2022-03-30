@@ -1,20 +1,19 @@
-import AbiDecoderContext from '@/context/AbiDecoderContext';
 import type { SavedContract } from '@/hooks/useSavedContracts';
 import useWeb3 from '@/hooks/useWeb3';
-import AbiDecoder from '@/utils/abi-decoder';
 import { Tab } from '@headlessui/react';
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
 import type { Contract } from 'web3-eth-contract';
-import type { AbiItem } from 'web3-utils';
+import { AbiItem, toChecksumAddress } from 'web3-utils';
 import CalldataDecoder from './CalldataDecoder';
 import ContractInteractor from './ContractInteractor';
+import TransactionDecoder from './TransactionDecoder';
 
 export interface ContractToolsProps {
   abi: AbiItem[];
   address: string;
   contract: Contract;
   savedContract: SavedContract;
+  savedContracts: SavedContract[];
 }
 
 const tabClasses = ({ selected }: { selected?: boolean }) =>
@@ -29,13 +28,9 @@ export default function ContractTools({
   address,
   contract,
   savedContract,
+  savedContracts,
 }: ContractToolsProps) {
   const { account, connect } = useWeb3();
-  const [abiDecoder, setAbiDecoder] = useState(() => new AbiDecoder(abi));
-
-  useEffect(() => {
-    setAbiDecoder(new AbiDecoder(abi));
-  }, [abi]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -48,7 +43,7 @@ export default function ContractTools({
         <div className="grid grid-cols-1 gap-2 items-center lg:grid-cols-3">
           <h2 className="font-bold">Contract address:</h2>
           <span className="block overflow-hidden col-span-2 py-2 px-3 font-mono text-ellipsis rounded-md border">
-            {address}
+            {toChecksumAddress(address)}
           </span>
         </div>
         <div className="grid grid-cols-1 gap-2 items-center lg:grid-cols-3">
@@ -69,23 +64,27 @@ export default function ContractTools({
           </div>
         </div>
       </div>
-      <AbiDecoderContext.Provider value={abiDecoder}>
-        <Tab.Group>
-          <Tab.List className="flex p-1 space-x-1 bg-gray-100 rounded-xl">
-            <Tab className={tabClasses}>Read/Write</Tab>
-            <Tab className={tabClasses}>Calldata decoder</Tab>
-            {/* <Tab className={tabClasses}>Log decoder</Tab> */}
-          </Tab.List>
-          <Tab.Panels>
-            <Tab.Panel>
-              <ContractInteractor contract={contract} abi={abi} />
-            </Tab.Panel>
-            <Tab.Panel>
-              <CalldataDecoder />
-            </Tab.Panel>
-          </Tab.Panels>
-        </Tab.Group>
-      </AbiDecoderContext.Provider>
+      <Tab.Group>
+        <Tab.List className="flex p-1 space-x-1 bg-gray-100 rounded-xl">
+          <Tab className={tabClasses}>Read/Write</Tab>
+          <Tab className={tabClasses}>Calldata decoder</Tab>
+          <Tab className={tabClasses}>Transaction decoder</Tab>
+        </Tab.List>
+        <Tab.Panels>
+          <Tab.Panel>
+            <ContractInteractor contract={contract} abi={abi} />
+          </Tab.Panel>
+          <Tab.Panel>
+            <CalldataDecoder savedContract={savedContract} />
+          </Tab.Panel>
+          <Tab.Panel>
+            <TransactionDecoder
+              savedContract={savedContract}
+              savedContracts={savedContracts}
+            />
+          </Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
     </div>
   );
 }
