@@ -7,3 +7,17 @@
     @apply box-border;
   }
 }
+
+@layer components {
+  .divide-y-container {
+    @apply divide-y;
+
+    & > *:not(:first-child) {
+      @apply pt-8;
+    }
+
+    & > *:not(:last-child) {
+      @apply pb-8;
+    }
+  }
+}
