@@ -26,10 +26,10 @@
     "next": "12.1.4",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "web3": "^1.7.1",
-    "web3-eth-abi": "^1.7.1",
-    "web3-eth-contract": "^1.7.1",
-    "web3-utils": "^1.7.1"
+    "web3": "^1.7.3",
+    "web3-eth-abi": "^1.7.3",
+    "web3-eth-contract": "^1.7.3",
+    "web3-utils": "^1.7.3"
   },
   "devDependencies": {
     "@babel/core": "^7.17.9",
@@ -40,7 +40,7 @@
     "@typescript-eslint/eslint-plugin": "^5.18.0",
     "@typescript-eslint/parser": "^5.18.0",
     "autoprefixer": "^10.4.4",
-    "eslint": "^7.32.0",
+    "eslint": "^8.12.0",
     "eslint-config-next": "^12.1.4",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
