@@ -5,6 +5,19 @@ const convertBoolean = (value: string) => {
   return Boolean(parseInt(value, 10));
 };
 
+const convertTuple = (value: string) => JSON.parse(value);
+
+const convert = (dataType: string, value: string) => {
+  switch (dataType) {
+    case 'bool':
+      return convertBoolean(value);
+    case 'tuple':
+      return convertTuple(value);
+    default:
+      return value;
+  }
+};
+
 export default function parseInputValue(input: HTMLInputElement) {
   const { dataType } = input.dataset as { dataType: string };
   if (dataType.startsWith('uint') || dataType.startsWith('int')) {
@@ -16,12 +29,12 @@ export default function parseInputValue(input: HTMLInputElement) {
     }
     return length <= 32 ? parseInt(input.value, 10) : toBN(input.value);
   }
-  switch (dataType) {
-    case 'bool':
-      return convertBoolean(input.value);
-    case 'bool[]':
-      return input.value.split(',').map((val) => convertBoolean(val.trim()));
-    default:
-      return input.value;
+  if (dataType.endsWith('[]')) {
+    const itemDataType = dataType.slice(0, -2);
+    if (itemDataType === 'tuple') {
+      return convertTuple(input.value);
+    }
+    return input.value.split(',').map((val) => convert(itemDataType, val));
   }
+  return convert(dataType, input.value);
 }
