@@ -67,26 +67,32 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
 
       setIsQuerying(true);
 
-      new Promise((resolve, reject) => {
-        if (!abiItem.name) {
-          reject(new Error('Invalid function name'));
-          return;
-        }
-        try {
-          const method = contract.methods[abiItem.name](...paramsRef.current);
-          resolve(
-            isReadFunc
-              ? method.call()
-              : method.send({ from: account, value: valueRef.current || '0' }),
-          );
-        } catch (err) {
-          reject(err);
-        }
-      })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .then((data: any) => setResult(JSON.stringify(data, null, 2)))
-        .catch((err: Error) => setError(err.message))
-        .finally(() => setIsQuerying(false));
+      // Allow time for the ref to update their value.
+      setTimeout(() => {
+        new Promise((resolve, reject) => {
+          if (!abiItem.name) {
+            reject(new Error('Invalid function name'));
+            return;
+          }
+          try {
+            const method = contract.methods[abiItem.name](...paramsRef.current);
+            resolve(
+              isReadFunc
+                ? method.call()
+                : method.send({
+                    from: account,
+                    value: valueRef.current || '0',
+                  }),
+            );
+          } catch (err) {
+            reject(err);
+          }
+        })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .then((data: any) => setResult(JSON.stringify(data, null, 2)))
+          .catch((err: Error) => setError(err.message))
+          .finally(() => setIsQuerying(false));
+      }, 10);
     },
     [abiItem.name, isReadFunc, contract.methods, account],
   );
