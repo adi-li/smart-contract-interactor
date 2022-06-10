@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import useWeb3 from '@/hooks/useWeb3';
-import parseInputValue from '@/utils/parseInputValue';
 import { Disclosure } from '@headlessui/react';
 import clsx from 'clsx';
-import { FormEventHandler, useCallback, useState } from 'react';
+import set from 'lodash.set';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Contract } from 'web3-eth-contract';
-import { AbiItem, toWei } from 'web3-utils';
+import { AbiInput, AbiItem } from 'web3-utils';
+import AbiInputComponent from './AbiInputs/AbiInput';
+import NumberInput from './AbiInputs/NumberInput';
 import ChevronRightIcon from './ChevronRightIcon';
 import Loading from './Loading';
 
@@ -13,16 +16,43 @@ export interface AbiItemRowProps {
   abiItem: AbiItem;
 }
 
+const TRANSACTION_VALUE_INPUT: AbiInput = {
+  name: 'Transaction value',
+  type: 'uint256',
+};
+
 export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
   const [isQuerying, setIsQuerying] = useState(false);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
+
+  const [params, setParams] = useState<any[]>([]);
+  const [value, setValue] = useState('');
+
   const { account, connect } = useWeb3();
+
   const isReadFunc =
     abiItem.stateMutability === 'pure' || abiItem.stateMutability === 'view';
-  const onSubmit: FormEventHandler<HTMLFormElement> = useCallback(
-    (e) => {
-      e.preventDefault();
+
+  const handleParamChange = useCallback((keyPath: string, value: any) => {
+    setParams((prev: any[]) => [...set(prev, keyPath, value)]);
+  }, []);
+
+  const handleEthValue = useCallback((keyPath: string, value: any) => {
+    setValue(value as string);
+  }, []);
+
+  const paramsRef = useRef(params);
+  const valueRef = useRef(value);
+
+  useEffect(() => {
+    paramsRef.current = params;
+    valueRef.current = value;
+  }, [params, value]);
+
+  const onSubmit = useCallback(
+    (e?: FormEvent<HTMLFormElement>) => {
+      e?.preventDefault();
       if (!abiItem.name) return;
 
       setResult('');
@@ -37,29 +67,22 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
 
       setIsQuerying(true);
 
-      const inputs = e.currentTarget.querySelectorAll(
-        'input:not([type="submit"]):not([data-txn-value])',
-      ) as NodeListOf<HTMLInputElement>;
-      const value = (
-        e.currentTarget.querySelector(
-          'input[data-txn-value]',
-        ) as HTMLInputElement | null
-      )?.value;
-
-      let data = [];
-      try {
-        data = Array.from(inputs.values()).map(parseInputValue);
-      } catch (err) {
-        setError((err as Error).message);
-        setIsQuerying(false);
-        return;
-      }
-
-      const method = contract.methods[abiItem.name](...data);
-      const promise = isReadFunc
-        ? method.call()
-        : method.send({ from: account, value: toWei(value || '0') });
-      promise
+      new Promise((resolve, reject) => {
+        if (!abiItem.name) {
+          reject(new Error('Invalid function name'));
+          return;
+        }
+        try {
+          const method = contract.methods[abiItem.name](...paramsRef.current);
+          resolve(
+            isReadFunc
+              ? method.call()
+              : method.send({ from: account, value: valueRef.current || '0' }),
+          );
+        } catch (err) {
+          reject(err);
+        }
+      })
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((data: any) => setResult(JSON.stringify(data, null, 2)))
         .catch((err: Error) => setError(err.message))
@@ -67,12 +90,22 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
     },
     [abiItem.name, isReadFunc, contract.methods, account],
   );
+
+  useEffect(() => {
+    if (isReadFunc && abiItem.inputs?.length === 0) {
+      onSubmit();
+    }
+  }, [abiItem.inputs?.length, isReadFunc, onSubmit]);
+
   return (
     <Disclosure>
       {({ open }) => (
         <>
           <Disclosure.Button className="flex justify-between py-2 px-4 w-full text-sm font-medium text-left bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus-visible:ring focus-visible:ring-gray-500/75">
-            <span>{abiItem.name}</span>
+            <span>
+              {abiItem.name}
+              {!isReadFunc && '*'}
+            </span>
             <ChevronRightIcon
               className={clsx(open && 'rotate-90', 'w-5 h-5')}
             />
@@ -80,39 +113,25 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
           <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-500 rounded-md border">
             <form onSubmit={onSubmit}>
               <div className="flex flex-col gap-4 items-start p-2">
-                {abiItem.inputs?.map((input) => (
-                  <label key={input.name} className="block w-full">
-                    <span className="text-gray-700">
-                      {input.name} ({input.type})
-                    </span>
-                    <input
-                      required
-                      type="text"
-                      className="block py-2 px-4 w-full rounded-md"
-                      data-data-type={input.type}
-                      pattern={
-                        input.type.startsWith('uint')
-                          ? '[0-9]+'
-                          : input.type.startsWith('int')
-                          ? '-?[0-9]+'
-                          : undefined
-                      }
-                    />
-                  </label>
+                {abiItem.inputs?.map((input, i) => (
+                  <AbiInputComponent
+                    key={input.name || i}
+                    keyPath={i.toString()}
+                    input={input}
+                    onUserInput={handleParamChange}
+                    defaultValue={params[i]}
+                  />
                 ))}
                 {abiItem.stateMutability === 'payable' && (
-                  <label className="block w-full">
-                    <span className="text-gray-700">
-                      Transaction value (in Eth)
-                    </span>
-                    <input
-                      required
-                      data-txn-value
-                      type="number"
-                      step={1e-9}
-                      className="block py-2 px-4 w-full rounded-md"
-                    />
-                  </label>
+                  <NumberInput
+                    keyPath="value"
+                    input={TRANSACTION_VALUE_INPUT}
+                    onUserInput={handleEthValue}
+                    required={false}
+                    defaultValue={value}
+                    type="uint"
+                    bits={256}
+                  />
                 )}
                 {isQuerying ? (
                   <Loading />

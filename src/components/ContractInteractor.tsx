@@ -13,15 +13,15 @@ export default function ContractInteractor({
 }: ContractInteractorProps) {
   return (
     <div className="flex flex-col gap-4">
-      {abi.map((abiItem) => {
-        if (abiItem.type !== 'function' || !abiItem.name) {
-          return null;
-        }
-        const key = `${abiItem.name}(${abiItem.inputs
-          ?.map((input) => input.type)
-          .join(',')})`;
-        return <AbiItemRow key={key} contract={contract} abiItem={abiItem} />;
-      })}
+      <div>* state mutate function</div>
+      {abi
+        .filter((abiItem) => abiItem.type === 'function' && abiItem.name)
+        .map((abiItem) => {
+          const key = `${abiItem.name}(${abiItem.inputs
+            ?.map((input) => input.type)
+            .join(',')})`;
+          return <AbiItemRow key={key} contract={contract} abiItem={abiItem} />;
+        })}
     </div>
   );
 }

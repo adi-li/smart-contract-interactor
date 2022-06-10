@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  * {
-    @apply box-border;
-  }
-}
-
 @layer components {
   .divide-y-container {
     @apply divide-y;
