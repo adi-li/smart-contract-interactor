@@ -1,6 +1,11 @@
-import type { SavedContract } from '@/hooks/useSavedContracts';
 import useWeb3 from '@/hooks/useWeb3';
+import SavedContract from '@/models/SavedContract';
+import bnReplacer from '@/utils/bnReplacer';
+import callWeb3 from '@/utils/callWeb3';
+import type { TransactionReceipt } from '@ethersproject/abstract-provider';
 import clsx from 'clsx';
+import { Contract } from 'ethers';
+import { FunctionFragment, Result } from 'ethers/lib/utils';
 import {
   ChangeEventHandler,
   FormEventHandler,
@@ -8,59 +13,64 @@ import {
   useCallback,
   useState,
 } from 'react';
+import CallResultSection from './CallResultSection';
 import Loading from './Loading';
 import Textarea from './Textarea';
 
 export default function CalldataDecoder({
+  contract,
   savedContract,
 }: {
+  contract: Contract;
   savedContract: SavedContract;
 }) {
   const { account, web3 } = useWeb3();
   const [calldata, setCalldata] = useState('');
   const [decodedData, setDecodedData] = useState('');
-  const [isValid, setIsValid] = useState(false);
+  const [functionFragment, setFunctionFragment] = useState<FunctionFragment>();
   const [isQuerying, setIsQuerying] = useState(false);
-  const [callResult, setCallResult] = useState('');
+  const [callResult, setCallResult] = useState<Result | TransactionReceipt>();
   const [callError, setCallError] = useState('');
 
   const onChange: ChangeEventHandler<HTMLTextAreaElement> = useCallback((e) => {
     setCalldata(e.target.value);
-    setIsValid(false);
+    setFunctionFragment(undefined);
   }, []);
 
   const onCall: MouseEventHandler<HTMLButtonElement> = (e) => {
     e.preventDefault();
-    if (!web3 || !account) return;
-    setCallResult('');
+    if (!web3 || !account || !functionFragment) return;
+
+    setCallResult(undefined);
     setCallError('');
     setIsQuerying(true);
-    web3.eth
-      .sendTransaction({
-        from: account,
-        to: savedContract.address,
-        data: calldata.trim(),
+    callWeb3(web3, functionFragment, {
+      from: account,
+      to: savedContract.address,
+      data: calldata.trim(),
+    })
+      .then((data) => {
+        setCallResult(
+          typeof data === 'string'
+            ? contract.interface.decodeFunctionResult(functionFragment, data)
+            : data,
+        );
       })
-      .then((data) => setCallResult(JSON.stringify(data, null, 2)))
       .catch(console.error)
       .finally(() => setIsQuerying(false));
   };
 
   const onSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
-    if (!savedContract.abiDecoder) return;
-    let decoded: ReturnType<typeof savedContract.abiDecoder.decodeMethod>;
     try {
-      decoded = savedContract.abiDecoder.decodeMethod(calldata.trim());
+      const decoded = savedContract.abi.parseTransaction({
+        data: calldata.trim(),
+      });
+      setDecodedData(JSON.stringify(decoded, bnReplacer, 2));
+      setFunctionFragment(decoded.functionFragment);
     } catch (err) {
       setDecodedData(err as string);
       return;
-    }
-    if (decoded) {
-      setDecodedData(JSON.stringify(decoded, null, 2));
-      setIsValid(true);
-    } else {
-      setDecodedData('Cannot decode calldata');
     }
   };
 
@@ -85,7 +95,7 @@ export default function CalldataDecoder({
                 <button
                   className="py-2 px-3 disabled:text-gray-400 hover:bg-indigo-100 disabled:bg-gray-200 rounded-md border disabled:cursor-not-allowed"
                   onClick={onCall}
-                  disabled={!isValid}
+                  disabled={!functionFragment}
                 >
                   Send Request
                 </button>
@@ -106,21 +116,27 @@ export default function CalldataDecoder({
         className="min-h-[12rem]"
         value={decodedData}
       />
-      {(callResult || callError || isQuerying) && (
+      {callResult && (
+        <CallResultSection
+          result={callResult}
+          abiItems={functionFragment?.outputs}
+        />
+      )}
+      {(callError || isQuerying) && (
         <div>
           <h3 className="text-gray-700">Transaction Result</h3>
           {isQuerying ? (
             <Loading />
-          ) : (
+          ) : callError ? (
             <pre
               className={clsx(
                 'overflow-auto p-2 mt-1 w-full max-h-60 rounded-md border',
                 callError && 'text-red-500',
               )}
             >
-              {callError ? callError : callResult}
+              {callError}
             </pre>
-          )}
+          ) : null}
         </div>
       )}
     </div>

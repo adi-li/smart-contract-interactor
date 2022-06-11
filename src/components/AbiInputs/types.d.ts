@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AbiInput } from 'web3-utils';
+
+import { ParamType } from 'ethers/lib/utils';
 
 export interface InputProps {
   keyPath: string;
   defaultValue?: any;
-  input: AbiInput;
+  input: ParamType;
   onUserInput: (keyPath: string, value: any) => void;
 }

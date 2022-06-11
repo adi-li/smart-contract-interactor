@@ -1,38 +1,40 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import useWeb3 from '@/hooks/useWeb3';
+import callWeb3 from '@/utils/callWeb3';
+import type { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { Disclosure } from '@headlessui/react';
 import clsx from 'clsx';
+import { Contract } from 'ethers';
+import { ParamType, Result } from 'ethers/lib/utils';
 import set from 'lodash.set';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { Contract } from 'web3-eth-contract';
-import { AbiInput, AbiItem } from 'web3-utils';
 import AbiInputComponent from './AbiInputs/AbiInput';
 import NumberInput from './AbiInputs/NumberInput';
+import CallResultSection from './CallResultSection';
 import ChevronRightIcon from './ChevronRightIcon';
 import Loading from './Loading';
 
 export interface AbiItemRowProps {
   contract: Contract;
-  abiItem: AbiItem;
+  functionKey: string;
 }
 
-const TRANSACTION_VALUE_INPUT: AbiInput = {
+const TRANSACTION_VALUE_INPUT = ParamType.fromObject({
   name: 'Transaction value',
   type: 'uint256',
-};
+});
 
-export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
+export default function AbiItemRow({ contract, functionKey }: AbiItemRowProps) {
+  const abiItem = contract.interface.functions[functionKey];
+
   const [isQuerying, setIsQuerying] = useState(false);
-  const [result, setResult] = useState('');
+  const [result, setResult] = useState<Result | TransactionReceipt>();
   const [error, setError] = useState('');
 
   const [params, setParams] = useState<any[]>([]);
   const [value, setValue] = useState('');
 
-  const { account, connect } = useWeb3();
-
-  const isReadFunc =
-    abiItem.stateMutability === 'pure' || abiItem.stateMutability === 'view';
+  const { account, connect, web3 } = useWeb3();
 
   const handleParamChange = useCallback((keyPath: string, value: any) => {
     setParams((prev: any[]) => [...set(prev, keyPath, value)]);
@@ -55,53 +57,53 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
       e?.preventDefault();
       if (!abiItem.name) return;
 
-      setResult('');
+      setResult(undefined);
       setError('');
 
-      if (!isReadFunc) {
-        if (!account) {
-          setError('Please connect with wallet to continue.');
-          return;
-        }
+      if (!abiItem.constant && !account) {
+        setError('Please connect with wallet to continue.');
+        return;
       }
 
       setIsQuerying(true);
 
       // Allow time for the ref to update their value.
-      setTimeout(() => {
-        new Promise((resolve, reject) => {
-          if (!abiItem.name) {
-            reject(new Error('Invalid function name'));
-            return;
-          }
-          try {
-            const method = contract.methods[abiItem.name](...paramsRef.current);
-            resolve(
-              isReadFunc
-                ? method.call()
-                : method.send({
-                    from: account,
-                    value: valueRef.current || '0',
-                  }),
-            );
-          } catch (err) {
-            reject(err);
-          }
-        })
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .then((data: any) => setResult(JSON.stringify(data, null, 2)))
-          .catch((err: Error) => setError(err.message))
-          .finally(() => setIsQuerying(false));
+      setTimeout(async () => {
+        if (!web3) return;
+        try {
+          const data = contract.interface.encodeFunctionData(
+            abiItem,
+            paramsRef.current,
+          );
+          const result = await callWeb3(web3, abiItem, {
+            data,
+            from: account ?? undefined,
+            to: contract.address,
+            value: valueRef.current || undefined,
+          });
+          const parsedResult =
+            typeof result === 'string'
+              ? contract.interface.decodeFunctionResult(abiItem, result)
+              : result;
+          setResult(parsedResult);
+        } catch (err) {
+          setError(
+            err instanceof Error ? err.message : JSON.stringify(err, null, 2),
+          );
+        } finally {
+          setIsQuerying(false);
+        }
       }, 10);
     },
-    [abiItem.name, isReadFunc, contract.methods, account],
+    [abiItem, account, contract.address, contract.interface, web3],
   );
 
+  // Auto call method when function is view and no input needs
   useEffect(() => {
-    if (isReadFunc && abiItem.inputs?.length === 0) {
+    if (abiItem.constant && abiItem.inputs.length === 0) {
       onSubmit();
     }
-  }, [abiItem.inputs?.length, isReadFunc, onSubmit]);
+  }, [abiItem.constant, abiItem.inputs?.length, onSubmit]);
 
   return (
     <Disclosure>
@@ -110,7 +112,7 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
           <Disclosure.Button className="flex justify-between py-2 px-4 w-full text-sm font-medium text-left bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus-visible:ring focus-visible:ring-gray-500/75">
             <span>
               {abiItem.name}
-              {!isReadFunc && '*'}
+              {!abiItem.constant && '*'}
             </span>
             <ChevronRightIcon
               className={clsx(open && 'rotate-90', 'w-5 h-5')}
@@ -141,7 +143,7 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
                 )}
                 {isQuerying ? (
                   <Loading />
-                ) : isReadFunc || account ? (
+                ) : abiItem.constant || account ? (
                   <input
                     className="py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-md cursor-pointer"
                     type="submit"
@@ -160,29 +162,7 @@ export default function AbiItemRow({ contract, abiItem }: AbiItemRowProps) {
                     {error}
                   </pre>
                 )}
-                {result && (
-                  <>
-                    {(abiItem.outputs?.length || 0) > 0 && (
-                      <ol className="pl-4 list-decimal">
-                        {abiItem.outputs?.map((output, idx) => (
-                          <li key={idx}>
-                            {output.name}({output.internalType || output.type})
-                            {(output.components?.length || 0) > 0 &&
-                              output.components?.map((component, cidx) => (
-                                <span key={cidx} className="block">
-                                  &gt; {component.name}(
-                                  {component.internalType || component.type})
-                                </span>
-                              ))}
-                          </li>
-                        ))}
-                      </ol>
-                    )}
-                    <pre className="overflow-auto p-2 w-full max-h-60 rounded-md border">
-                      {result}
-                    </pre>
-                  </>
-                )}
+                <CallResultSection result={result} abiItems={abiItem.outputs} />
               </div>
             </form>
           </Disclosure.Panel>

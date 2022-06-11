@@ -1,15 +1,14 @@
-import type { SavedContract } from '@/hooks/useSavedContracts';
 import useWeb3 from '@/hooks/useWeb3';
+import SavedContract from '@/models/SavedContract';
+import toChecksumAddress from '@/utils/toChecksumAddress';
 import { Tab } from '@headlessui/react';
 import clsx from 'clsx';
-import type { Contract } from 'web3-eth-contract';
-import { AbiItem, toChecksumAddress } from 'web3-utils';
+import type { Contract } from 'ethers';
 import CalldataDecoder from './CalldataDecoder';
 import ContractInteractor from './ContractInteractor';
 import TransactionDecoder from './TransactionDecoder';
 
 export interface ContractToolsProps {
-  abi: AbiItem[];
   address: string;
   contract: Contract;
   savedContract: SavedContract;
@@ -24,7 +23,6 @@ const tabClasses = ({ selected }: { selected?: boolean }) =>
   );
 
 export default function ContractTools({
-  abi,
   address,
   contract,
   savedContract,
@@ -72,10 +70,13 @@ export default function ContractTools({
         </Tab.List>
         <Tab.Panels>
           <Tab.Panel>
-            <ContractInteractor contract={contract} abi={abi} />
+            <ContractInteractor contract={contract} />
           </Tab.Panel>
           <Tab.Panel>
-            <CalldataDecoder savedContract={savedContract} />
+            <CalldataDecoder
+              contract={contract}
+              savedContract={savedContract}
+            />
           </Tab.Panel>
           <Tab.Panel>
             <TransactionDecoder

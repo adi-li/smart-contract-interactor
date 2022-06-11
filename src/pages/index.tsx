@@ -2,24 +2,27 @@ import ContractTools from '@/components/ContractTools';
 import Layout from '@/components/Layout';
 import NewContractForm from '@/components/NewContractForm';
 import SavedContracts from '@/components/SavedContracts';
-import useSavedContracts, { SavedContract } from '@/hooks/useSavedContracts';
+import useSavedContracts from '@/hooks/useSavedContracts';
 import useWeb3 from '@/hooks/useWeb3';
+import SavedContract from '@/models/SavedContract';
+import toChecksumAddress from '@/utils/toChecksumAddress';
+import { Contract } from 'ethers';
+import { Interface } from 'ethers/lib/utils';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { AbiItem, toChecksumAddress } from 'web3-utils';
 
 export default function Home() {
   const { ethereum, chainId, web3 } = useWeb3();
   const [address, setAddress] = useState<string>('');
-  const [abi, setAbi] = useState<AbiItem[]>([]);
+  const [abi, setAbi] = useState<Interface>();
   const [savedContracts, updateContract, removeContract] =
     useSavedContracts(chainId);
   const interactorRef = useRef<HTMLDivElement | null>(null);
 
   const contract = useMemo(() => {
     if (!web3 || !address || !abi) return null;
-    return new web3.eth.Contract(abi, address);
+    return new Contract(address, abi, web3.getSigner() ?? web3);
   }, [address, abi, web3]);
 
   const savedContract = useMemo(() => {
@@ -28,7 +31,7 @@ export default function Home() {
   }, [address, savedContracts]);
 
   const onCreate = useCallback(
-    (addressInput: string, abiInput: AbiItem[]) => {
+    (addressInput: string, abiInput: Interface) => {
       if (!web3) return;
       const checksum = toChecksumAddress(addressInput);
       if (!checksum) {
@@ -69,8 +72,9 @@ export default function Home() {
       const name = window.prompt('Please enter a nickname');
       if (!name) return;
       updateContract({
-        ...contract,
         name,
+        address: contract.address,
+        abi: contract.abi,
       });
     },
     [updateContract],
@@ -129,7 +133,6 @@ export default function Home() {
             <div ref={interactorRef} className="py-8 w-full border-t">
               <div className="px-4 mx-auto w-full max-w-3xl">
                 <ContractTools
-                  abi={abi}
                   address={address}
                   contract={contract}
                   savedContract={savedContract}

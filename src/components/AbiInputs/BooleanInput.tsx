@@ -25,7 +25,13 @@ export default function BooleanInput({
 
   return (
     <label key={input.name} className="flex gap-2 items-center">
-      <input type="checkbox" value={value} onChange={handleChange} {...rest} />
+      <input
+        className="rounded-sm"
+        type="checkbox"
+        value={value}
+        onChange={handleChange}
+        {...rest}
+      />
       <span className="text-gray-700">
         {input.name} ({input.type})
       </span>

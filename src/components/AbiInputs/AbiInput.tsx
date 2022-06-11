@@ -13,27 +13,11 @@ import NumberInput, { extractNumberType } from './NumberInput';
 import RawInput from './RawInput';
 import { InputProps } from './types';
 
-function ArrayInput({
-  type,
-  maxLength,
-  keyPath,
-  input,
-  onUserInput,
-  defaultValue,
-}: { type: string; maxLength: number } & InputProps) {
+function ArrayInput({ keyPath, input, onUserInput, defaultValue }: InputProps) {
   const [array, setArray] = useState<{ id: number; value: any }[]>(() =>
     defaultValue
       ? defaultValue.map((value: any, id: number) => ({ id, value }))
       : [{ id: Date.now(), value: undefined }],
-  );
-
-  const inputItem = useMemo(
-    () => ({
-      ...input,
-      type,
-      name: `${input.name} item`,
-    }),
-    [input, type],
   );
 
   const handleInput = useCallback((id: string, value: any) => {
@@ -50,10 +34,12 @@ function ArrayInput({
 
   const handleInsertRow = useCallback(() => {
     setArray((prev) => {
-      if (maxLength && prev.length >= maxLength) return prev;
+      if (input.arrayLength !== -1 && prev.length < input.arrayLength) {
+        return prev;
+      }
       return prev.concat({ id: Date.now(), value: undefined });
     });
-  }, [maxLength]);
+  }, [input.arrayLength]);
 
   const handleRemoveRow: MouseEventHandler<HTMLButtonElement> = useCallback(
     (e) => {
@@ -71,42 +57,50 @@ function ArrayInput({
   }, [array, keyPath, onUserInput]);
 
   const hasMultipleItems = array.length > 1;
-  const canInsertRow = !maxLength || array.length < maxLength;
+  const canInsertRow =
+    input.arrayLength === -1 || array.length < input.arrayLength;
 
   return (
-    <div className="flex flex-col gap-4 w-full">
-      <div>
-        <button
-          className="py-1 px-2 disabled:text-gray-400 hover:bg-indigo-100 disabled:bg-gray-200 rounded-md border disabled:cursor-not-allowed"
-          type="button"
-          onClick={handleInsertRow}
-          disabled={!canInsertRow}
-        >
-          + New Row
-        </button>
-      </div>
-      {array.map(({ id, value }) => (
-        <div key={id} className="flex gap-2">
-          {hasMultipleItems && (
-            <div className="self-start">
-              <button
-                className="w-6 h-6 disabled:text-gray-400 hover:bg-indigo-100 disabled:bg-gray-200 rounded-md border disabled:cursor-not-allowed"
-                type="button"
-                onClick={handleRemoveRow}
-                data-row-id={id}
-              >
-                -
-              </button>
+    <div className="w-full">
+      <label className="text-gray-700">
+        {input.name} ({input.type})
+      </label>
+      <div className="flex flex-col gap-2 pl-4 mt-1 border-l">
+        <div className="flex flex-col gap-4 w-full">
+          <div>
+            <button
+              className="py-1 px-2 disabled:text-gray-400 hover:bg-indigo-100 disabled:bg-gray-200 rounded-md border disabled:cursor-not-allowed"
+              type="button"
+              onClick={handleInsertRow}
+              disabled={!canInsertRow}
+            >
+              + New Row
+            </button>
+          </div>
+          {array.map(({ id, value }) => (
+            <div key={id} className="flex gap-2">
+              {hasMultipleItems && (
+                <div className="self-start">
+                  <button
+                    className="w-6 h-6 disabled:text-gray-400 hover:bg-indigo-100 disabled:bg-gray-200 rounded-md border disabled:cursor-not-allowed"
+                    type="button"
+                    onClick={handleRemoveRow}
+                    data-row-id={id}
+                  >
+                    -
+                  </button>
+                </div>
+              )}
+              <AbiInput
+                keyPath={id.toString()}
+                input={input.arrayChildren}
+                onUserInput={handleInput}
+                defaultValue={value}
+              />
             </div>
-          )}
-          <AbiInput
-            keyPath={id.toString()}
-            input={inputItem}
-            onUserInput={handleInput}
-            defaultValue={value}
-          />
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 }
@@ -118,14 +112,6 @@ export default function AbiInput({
   defaultValue,
 }: InputProps) {
   const [object, setObject] = useState<any>(defaultValue);
-
-  const [arrayType, arrayLength] = useMemo(() => {
-    const matches = input.type.match(/^([\w_]+)\[(\d*)\]$/);
-    return [matches?.[1], parseInt(matches?.[2] || '0')] as [
-      string | undefined,
-      number,
-    ];
-  }, [input.type]);
 
   const numberProps = useMemo(
     () => extractNumberType(input.type),
@@ -147,37 +133,14 @@ export default function AbiInput({
     onUserInput(keyPath, object);
   }, [object, keyPath, onUserInput]);
 
-  if (arrayType || input.type === 'tuple') {
+  if (input.arrayChildren) {
     return (
-      <div className="w-full">
-        <label className="text-gray-700">
-          {input.name} ({input.type})
-        </label>
-        {arrayType ? (
-          <div className="flex flex-col gap-2 pl-4 mt-1 border-l">
-            <ArrayInput
-              type={arrayType}
-              maxLength={arrayLength}
-              keyPath={input.name}
-              input={input}
-              onUserInput={handleInput}
-              defaultValue={defaultValue}
-            />
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2 pl-4 mt-1 border-l">
-            {input.components?.map((subInput, i) => (
-              <AbiInput
-                key={subInput.name || i}
-                keyPath={subInput.name}
-                input={subInput}
-                onUserInput={handleInput}
-                defaultValue={defaultValue?.[subInput.name]}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      <ArrayInput
+        keyPath={input.name}
+        input={input}
+        onUserInput={handleInput}
+        defaultValue={defaultValue}
+      />
     );
   }
 
@@ -194,7 +157,7 @@ export default function AbiInput({
     );
   }
 
-  if (input.type === 'bool') {
+  if (input.baseType === 'bool') {
     return (
       <BooleanInput
         keyPath={keyPath}
@@ -205,7 +168,7 @@ export default function AbiInput({
     );
   }
 
-  if (input.type === 'bytes') {
+  if (input.baseType === 'bytes') {
     return (
       <BytesInput
         keyPath={keyPath}
@@ -213,6 +176,27 @@ export default function AbiInput({
         onUserInput={handleInput}
         defaultValue={defaultValue}
       />
+    );
+  }
+
+  if (input.components) {
+    return (
+      <div className="w-full">
+        <label className="text-gray-700">
+          {input.name} ({input.type})
+        </label>
+        <div className="flex flex-col gap-2 pl-4 mt-1 border-l">
+          {input.components?.map((subInput, i) => (
+            <AbiInput
+              key={subInput.name || i}
+              keyPath={subInput.name}
+              input={subInput}
+              onUserInput={handleInput}
+              defaultValue={defaultValue?.[subInput.name]}
+            />
+          ))}
+        </div>
+      </div>
     );
   }
 

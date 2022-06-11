@@ -1,7 +1,8 @@
-import type { SavedContract } from '@/hooks/useSavedContracts';
 import useWeb3 from '@/hooks/useWeb3';
+import SavedContract from '@/models/SavedContract';
+import bnReplacer from '@/utils/bnReplacer';
+import toChecksumAddress from '@/utils/toChecksumAddress';
 import { FormEventHandler, useState } from 'react';
-import { toChecksumAddress } from 'web3-utils';
 import Input from './Input';
 import Textarea from './Textarea';
 
@@ -20,38 +21,48 @@ export default function TransactionDecoder({
   const onSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
     if (!txnId) return;
-    web3?.eth
-      .getTransaction(txnId)
+
+    web3
+      ?.getTransaction(txnId)
       .then((txn) => {
         if (txn.to && toChecksumAddress(txn.to) !== savedContract.address) {
           throw new Error('Contract is not the transaction recipient.');
         }
-        const decoded = savedContract.abiDecoder.decodeMethod(txn.input);
+
+        const decoded = savedContract.abi.parseTransaction({
+          data: txn.data,
+          value: txn.value,
+        });
+
         if (!decoded) {
           throw new Error('Cannot decode transaction logs.');
         }
-        setCalldata(JSON.stringify(decoded, null, 2));
+        setCalldata(JSON.stringify(decoded, bnReplacer, 2));
       })
-      .catch((err) => setCalldata(err as string));
-    web3?.eth
-      .getTransactionReceipt(txnId)
+      .catch((err) =>
+        setCalldata(err instanceof Error ? err.message : (err as string)),
+      );
+
+    web3
+      ?.getTransactionReceipt(txnId)
       .then((txn) => {
         if (toChecksumAddress(txn.to) !== savedContract.address) {
           throw new Error('Contract is not the transaction recipient.');
         }
+
         const decoded = txn.logs.map((log) => {
           const logAddress = log.address && toChecksumAddress(log.address);
-          if (!logAddress) return log;
+          if (!logAddress) return { log };
           const contract = savedContracts.find(
             ({ address }) => address === logAddress,
           );
-          if (!contract) return log;
+          if (!contract) return { log };
           return {
-            ...contract.abiDecoder.decodeLogs([log])[0],
+            log: contract.abi.parseLog({ data: log.data, topics: log.topics }),
             contract: contract.name,
           };
         });
-        setEvents(JSON.stringify(decoded, null, 2));
+        setEvents(JSON.stringify(decoded, bnReplacer, 2));
       })
       .catch((err) => setEvents(err as string));
   };

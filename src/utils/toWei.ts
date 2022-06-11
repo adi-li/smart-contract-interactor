@@ -1,12 +1,12 @@
-import { toWei as baseToWei, Unit } from 'web3-utils';
+import { ethers } from 'ethers';
 
 export default function toWei(
   value: string | null | undefined,
-  unit: Unit = 'wei',
+  unit: ethers.BigNumberish = 'wei',
 ) {
   if (value == null) return '';
   try {
-    return baseToWei(value, unit);
+    return ethers.utils.parseUnits(value, unit).toString();
   } catch (error) {
     return '';
   }

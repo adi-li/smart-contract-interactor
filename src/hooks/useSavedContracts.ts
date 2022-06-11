@@ -1,21 +1,32 @@
-import AbiDecoder from '@/utils/abi-decoder';
+import SavedContract from '@/models/SavedContract';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AbiItem } from 'web3-utils';
 
 const KEY = 'eth-contract-gui.saved-contracts';
 
-export interface SavedContract {
-  name: string;
-  lastUpdatedAt: number;
-  address: string;
-  abi: AbiItem[];
-  abiDecoder: AbiDecoder;
-}
+export type NewContract = Parameters<
+  typeof SavedContract['prototype']['update']
+>[0];
 
-export type RawSavedContract = Omit<SavedContract, 'abiDecoder'>;
+const fetchSavedContracts = () => {
+  const value =
+    typeof window === 'undefined' ? null : window.localStorage.getItem(KEY);
+  const obj: Record<
+    string,
+    Record<string, ConstructorParameters<typeof SavedContract>[0]>
+  > = value ? JSON.parse(value) : {};
 
-export type NewContract = Pick<SavedContract, 'address' | 'abi'> &
-  Partial<Pick<SavedContract, 'name'>>;
+  return Object.fromEntries(
+    Object.entries(obj).map(([networkId, contractsMap]) => [
+      networkId,
+      Object.fromEntries(
+        Object.entries(contractsMap).map(([address, contract]) => [
+          address,
+          new SavedContract(contract),
+        ]),
+      ),
+    ]),
+  );
+};
 
 export default function useSavedContracts(
   chainId: string | null,
@@ -24,33 +35,23 @@ export default function useSavedContracts(
   (newContract: NewContract) => void,
   (address: string) => void,
 ] {
-  const [savedContracts, setSavedContracts] = useState<
-    Record<string, Record<string, RawSavedContract>>
-  >(() => {
-    const value =
-      typeof window === 'undefined' ? null : window.localStorage.getItem(KEY);
-    return value ? JSON.parse(value) : {};
-  });
+  const [savedContracts, setSavedContracts] = useState(fetchSavedContracts);
 
   const update = useCallback(
     (newContract: NewContract) => {
       if (!chainId) return;
-      setSavedContracts(
-        (prevState: Record<string, Record<string, RawSavedContract>>) => {
-          const oldContract = prevState?.[chainId]?.[newContract.address] || {};
-          return {
-            ...prevState,
-            [chainId]: {
-              ...prevState[chainId],
-              [newContract.address]: {
-                name: oldContract.name || newContract.address,
-                ...newContract,
-                lastUpdatedAt: Date.now(),
-              },
-            },
-          };
-        },
-      );
+      setSavedContracts((prevState) => {
+        const oldContract = prevState?.[chainId]?.[newContract.address];
+        return {
+          ...prevState,
+          [chainId]: {
+            ...prevState[chainId],
+            [newContract.address]: oldContract
+              ? oldContract.update(newContract)
+              : new SavedContract(newContract),
+          },
+        };
+      });
     },
     [chainId],
   );
@@ -58,17 +59,14 @@ export default function useSavedContracts(
   const remove = useCallback(
     (address: string) => {
       if (!chainId) return;
-      setSavedContracts(
-        (prevState: Record<string, Record<string, RawSavedContract>>) => {
-          const newContracts = { ...prevState[chainId] };
-          delete newContracts[address];
-          const newState = {
-            ...prevState,
-            [chainId]: newContracts,
-          };
-          return newState;
-        },
-      );
+      setSavedContracts((prevState) => {
+        const newContracts = { ...prevState[chainId] };
+        delete newContracts[address];
+        return {
+          ...prevState,
+          [chainId]: newContracts,
+        };
+      });
     },
     [chainId],
   );
@@ -81,15 +79,10 @@ export default function useSavedContracts(
     if (!chainId) return [];
     const contracts = savedContracts[chainId];
     if (!contracts) return [];
-    return Object.values(contracts)
-      .sort(
-        (aContract, bContract) =>
-          bContract.lastUpdatedAt - aContract.lastUpdatedAt,
-      )
-      .map((contract) => ({
-        ...contract,
-        abiDecoder: new AbiDecoder(contract.abi),
-      }));
+    return Object.values(contracts).sort(
+      (aContract, bContract) =>
+        bContract.lastUpdatedAt - aContract.lastUpdatedAt,
+    );
   }, [savedContracts, chainId]);
 
   return [data, update, remove];

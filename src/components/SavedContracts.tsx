@@ -1,4 +1,4 @@
-import { SavedContract } from '@/hooks/useSavedContracts';
+import SavedContract from '@/models/SavedContract';
 import clsx from 'clsx';
 import { MouseEventHandler, useCallback } from 'react';
 import CogIcon from './CogIcon';

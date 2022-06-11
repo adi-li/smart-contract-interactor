@@ -1,13 +1,19 @@
 import useChainName from '@/hooks/useChainName';
-import type { SavedContract } from '@/hooks/useSavedContracts';
 import useWeb3 from '@/hooks/useWeb3';
-import { FormEventHandler, useCallback, useEffect, useState } from 'react';
-import type { AbiItem } from 'web3-utils';
+import SavedContract from '@/models/SavedContract';
+import { Interface } from 'ethers/lib/utils';
+import {
+  ChangeEventHandler,
+  FormEventHandler,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import Input from './Input';
 import Textarea from './Textarea';
 
 export interface NewContractFormProps {
-  onSubmit: (address: string, abi: AbiItem[]) => void;
+  onSubmit: (address: string, abi: Interface) => void;
   defaultContract?: SavedContract | null;
 }
 
@@ -18,7 +24,7 @@ export default function NewContractForm({
   const { web3, chainId } = useWeb3();
   const chainName = useChainName(chainId);
   const [address, setAddress] = useState<string>('');
-  const [abi, setAbi] = useState<string>('');
+  const [abiString, setAbiString] = useState<string>('');
 
   const wrappedOnSubmit: FormEventHandler<HTMLFormElement> = useCallback(
     (e) => {
@@ -28,26 +34,45 @@ export default function NewContractForm({
         window.alert('Invalid address');
         return;
       }
-      if (!abi) {
+      if (!abiString) {
         window.alert('Invalid ABI json');
         return;
       }
-      let json: AbiItem[];
+      let abi: Interface;
       try {
-        json = JSON.parse(abi);
+        abi = new Interface(abiString);
       } catch (error) {
         window.alert('Invalid ABI json');
         return;
       }
-      onSubmit(address, json);
+      onSubmit(address, abi);
     },
-    [abi, address, onSubmit, web3],
+    [abiString, address, onSubmit, web3],
+  );
+
+  const handleAddress: ChangeEventHandler<HTMLInputElement> = useCallback(
+    (e) => setAddress(e.target.value),
+    [],
+  );
+
+  const handleAbi: ChangeEventHandler<HTMLTextAreaElement> = useCallback(
+    (e) => setAbiString(e.target.value),
+    [],
   );
 
   useEffect(() => {
     if (!defaultContract) return;
+    const formattedAbi = defaultContract.getFormattedAbi();
     setAddress(defaultContract.address);
-    setAbi(JSON.stringify(defaultContract.abi, null, 2));
+    setAbiString(
+      JSON.stringify(
+        typeof formattedAbi === 'string'
+          ? JSON.parse(formattedAbi)
+          : formattedAbi,
+        null,
+        2,
+      ),
+    );
   }, [defaultContract]);
 
   return (
@@ -69,7 +94,7 @@ export default function NewContractForm({
           name="address"
           pattern="^0x[a-fA-F0-9]{40}$"
           value={address}
-          onChange={(e) => setAddress(e.target.value)}
+          onChange={handleAddress}
         />
         <Textarea
           required
@@ -77,8 +102,8 @@ export default function NewContractForm({
           name="abi"
           helpText="Paste ABI JSON array above"
           wrapperClassName="col-span-full"
-          value={abi}
-          onChange={(e) => setAbi(e.target.value)}
+          value={abiString}
+          onChange={handleAbi}
         />
         <div className="col-span-full text-right">
           <button className="py-2 px-3 hover:bg-indigo-100 rounded-md border">

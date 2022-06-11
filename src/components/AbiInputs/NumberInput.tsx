@@ -1,5 +1,6 @@
 import toWei from '@/utils/toWei';
 import clsx from 'clsx';
+import { BigNumberish } from 'ethers';
 import {
   ChangeEventHandler,
   FocusEventHandler,
@@ -9,24 +10,24 @@ import {
   useMemo,
   useState,
 } from 'react';
-import type { Unit } from 'web3-utils';
 import { InputProps } from './types';
 
-const UNITS_MAP: { label: ReactNode; value: Unit; minBits: number }[] = [
-  { label: <>&times; 1 (wei)</>, value: 'wei', minBits: 0 },
-  { label: <>&times; 10&#x00b3; (kwei)</>, value: 'kwei', minBits: 16 },
-  { label: <>&times; 10&#x2076; (mwei)</>, value: 'mwei', minBits: 24 },
-  {
-    label: <>&times; 10&#x2079; (gwei)</>,
-    value: 'gwei',
-    minBits: 32,
-  },
-  {
-    label: <>&times; 10&#x00b9;&#x2078; (eth)</>,
-    value: 'ether',
-    minBits: 64,
-  },
-];
+const UNITS_MAP: { label: ReactNode; value: BigNumberish; minBits: number }[] =
+  [
+    { label: <>&times; 1 (wei)</>, value: 'wei', minBits: 0 },
+    { label: <>&times; 10&#x00b3; (kwei)</>, value: 'kwei', minBits: 16 },
+    { label: <>&times; 10&#x2076; (mwei)</>, value: 'mwei', minBits: 24 },
+    {
+      label: <>&times; 10&#x2079; (gwei)</>,
+      value: 'gwei',
+      minBits: 32,
+    },
+    {
+      label: <>&times; 10&#x00b9;&#x2078; (eth)</>,
+      value: 'ether',
+      minBits: 64,
+    },
+  ];
 
 interface NumberInputProps
   extends InputProps,
@@ -48,7 +49,7 @@ export default function NumberInput({
 }: NumberInputProps) {
   const id = useId();
   const [value, setValue] = useState(defaultValue || '');
-  const [unit, setUnit] = useState<Unit>(UNITS_MAP[0].value);
+  const [unit, setUnit] = useState<BigNumberish>(UNITS_MAP[0].value);
 
   const pattern = useMemo(() => {
     const base = unit === 'wei' ? '[0-9]+' : '[0-9]+\\.?[0-9]*';
@@ -78,7 +79,7 @@ export default function NumberInput({
 
   const onUnitChange: ChangeEventHandler<HTMLSelectElement> = useCallback(
     (e) => {
-      const unit = e.target.value as Unit;
+      const unit = e.target.value as BigNumberish;
       setUnit(unit);
       onUserInput?.(keyPath, toWei(value, unit));
     },
@@ -114,7 +115,7 @@ export default function NumberInput({
             className="rounded-r-md border-l-transparent"
           >
             {units.map(({ label, value }) => (
-              <option key={value} value={value}>
+              <option key={value.toString()} value={value.toString()}>
                 {label}
               </option>
             ))}
