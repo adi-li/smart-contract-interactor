@@ -34,18 +34,16 @@ export default function ChainSwitcher() {
     () => chains.find((chain) => chainId === chain.chainId),
     [chains, chainId],
   );
-  const filteredChains = useMemo(
-    () =>
-      !query
-        ? chains
-        : chains.filter(({ name }) =>
-            name
-              .toLowerCase()
-              .replace(/\s+/g, '')
-              .includes(query.toLowerCase().replace(/\s+/g, '')),
-          ),
-    [query, chains],
-  );
+  const filteredChains = useMemo(() => {
+    const normalizedQuery = query.toLowerCase().replace(/\s+/g, '');
+    return !normalizedQuery
+      ? chains
+      : chains.filter(
+          ({ chainId, name }) =>
+            chainId.toString().includes(query) ||
+            name.toLowerCase().replace(/\s+/g, '').includes(normalizedQuery),
+        );
+  }, [query, chains]);
 
   const onSelectNetwork = useCallback(
     (targetChain: Chain | null) => {
