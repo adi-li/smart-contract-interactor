@@ -3,26 +3,32 @@ import { ethers } from 'ethers';
 import { useMetaMask } from 'metamask-react';
 import { useMemo } from 'react';
 
-const cachedWeb3: Record<string, ethers.providers.Web3Provider> = {};
+let cachedWeb3: ethers.providers.Web3Provider | undefined;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getWeb3 = (ethereum: any, chainId: string | null) => {
-  if (!chainId) return null;
-  if (!cachedWeb3[chainId]) {
-    cachedWeb3[chainId] = new ethers.providers.Web3Provider(ethereum);
+const getWeb3 = (ethereum: any) => {
+  if (!cachedWeb3) {
+    cachedWeb3 = new ethers.providers.Web3Provider(ethereum, 'any');
+    cachedWeb3.on('network', (newNetwork, oldNetwork) => {
+      // When a Provider makes its initial connection, it emits a "network"
+      // event with a null oldNetwork along with the newNetwork. So, if the
+      // oldNetwork exists, it represents a changing network
+      if (oldNetwork) {
+        window.location.reload();
+      }
+    });
   }
-  return cachedWeb3[chainId];
+  return cachedWeb3;
 };
 
 export default function useWeb3() {
   const context = useMetaMask();
-  const { chainId, ethereum, account: address } = context;
+  const { ethereum, account: address } = context;
 
   const web3 = useMemo(() => {
     if (!ethereum) return null;
-    return getWeb3(ethereum, chainId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ethereum, chainId]);
+    return getWeb3(ethereum);
+  }, [ethereum]);
 
   const account = useMemo(
     () => address && toChecksumAddress(address),

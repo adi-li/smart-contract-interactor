@@ -7,8 +7,8 @@ export default function useChainName(chainId: string | null) {
     const chainNum = parseInt(chainId || '0', 16);
     return (
       (chains.length > 0 &&
-        chainNum > 0 &&
-        chains.find((chain) => chain.chainId === chainNum)?.network) ||
+        chainNum != null &&
+        chains.find((chain) => chain.chainId === chainNum)?.name) ||
       chainId ||
       'N/A'
     );

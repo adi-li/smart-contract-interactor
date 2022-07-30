@@ -1,7 +1,7 @@
 import { createContext } from 'react';
 
 export interface Chain {
-  network: string;
+  name: string;
   chainId: number;
 }
 

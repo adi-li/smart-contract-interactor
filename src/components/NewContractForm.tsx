@@ -1,4 +1,3 @@
-import useChainName from '@/hooks/useChainName';
 import useWeb3 from '@/hooks/useWeb3';
 import SavedContract from '@/models/SavedContract';
 import { Interface } from 'ethers/lib/utils';
@@ -9,6 +8,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import ChainSwitcher from './ChainSwitcher';
 import Input from './Input';
 import Textarea from './Textarea';
 
@@ -21,8 +21,7 @@ export default function NewContractForm({
   onSubmit,
   defaultContract,
 }: NewContractFormProps) {
-  const { web3, chainId } = useWeb3();
-  const chainName = useChainName(chainId);
+  const { web3 } = useWeb3();
   const [address, setAddress] = useState<string>('');
   const [abiString, setAbiString] = useState<string>('');
 
@@ -79,13 +78,7 @@ export default function NewContractForm({
     <form className="w-full" onSubmit={wrappedOnSubmit}>
       <h3 className="mb-2 text-xl font-bold">New Contract</h3>
       <div className="grid grid-cols-2 gap-6">
-        <Input
-          title="Current Chain Id"
-          helpText="Change it via MetaMask plugin"
-          type="text"
-          disabled
-          value={chainName}
-        />
+        <ChainSwitcher />
         <Input
           required
           title="Contract Address"
