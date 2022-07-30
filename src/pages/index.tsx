@@ -12,6 +12,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+const TITLE = 'ec-io by Adi Li';
+
 export default function Home() {
   const { ethereum, chainId, web3 } = useWeb3();
   const [address, setAddress] = useState<string>('');
@@ -92,9 +94,7 @@ export default function Home() {
     <Layout>
       <Head>
         <title>
-          {savedContract
-            ? `${savedContract.name} | eth-contract-gui`
-            : 'eth-contract-gui'}
+          {savedContract ? `${savedContract.name} | ${TITLE}` : TITLE}
         </title>
       </Head>
       {!ethereum ? (
