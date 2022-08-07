@@ -12,7 +12,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-const TITLE = 'ec-io by Adi Li';
+const TITLE = 'ecrw by Adi Li';
 
 export default function Home() {
   const { ethereum, chainId, web3 } = useWeb3();
@@ -98,7 +98,7 @@ export default function Home() {
         </title>
       </Head>
       {!ethereum ? (
-        <div className="flex grow justify-center items-center">
+        <div className="flex grow items-center justify-center">
           <p>
             Please download and use&nbsp;
             <Link href="https://metamask.io/">
@@ -115,7 +115,7 @@ export default function Home() {
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-8 px-4 pb-8 mx-auto w-full max-w-3xl">
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 pb-8">
             <SavedContracts
               contracts={savedContracts}
               highlightContract={savedContract}
@@ -130,8 +130,8 @@ export default function Home() {
           </div>
 
           {contract && savedContract && (
-            <div ref={interactorRef} className="py-8 w-full border-t">
-              <div className="px-4 mx-auto w-full max-w-3xl">
+            <div ref={interactorRef} className="w-full border-t py-8">
+              <div className="mx-auto w-full max-w-3xl px-4">
                 <ContractTools
                   address={address}
                   contract={contract}
