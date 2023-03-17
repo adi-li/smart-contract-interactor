@@ -6,7 +6,7 @@ export default function Header() {
       <h1 className="text-4xl font-bold">Ethereum Contract Read/Write</h1>
       <p className="mt-2 text-gray-600">
         A simple smart contract interactor using metamask, inspired by{' '}
-        <Link href="etherscan.io">
+        <Link href="https://etherscan.io">
           <a
             className="underline hover:no-underline"
             target="_blank"
